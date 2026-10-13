@@ -8,9 +8,9 @@ final class Monitor {
     private var timer: Timer?
     private var distractedSince: Date?
     private var lastNag: Date = .distantPast
-    private let onNag: (String) -> Void
+    private let onNag: (String, Int) -> Void
 
-    init(onNag: @escaping (String) -> Void) { self.onNag = onNag }
+    init(onNag: @escaping (String, Int) -> Void) { self.onNag = onNag }
 
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
@@ -26,6 +26,7 @@ final class Monitor {
             distractedSince = nil
             return
         }
+        Settings.addDistractedTime(Self.pollInterval)
         let now = Date()
         let since = distractedSince ?? now
         distractedSince = since
@@ -33,7 +34,7 @@ final class Monitor {
            now.timeIntervalSince(lastNag) >= Settings.cooldown {
             lastNag = now
             distractedSince = nil
-            onNag(Settings.message)
+            onNag(Settings.message, Settings.distractedMinutesToday)
         }
     }
 
@@ -42,6 +43,17 @@ final class Monitor {
         let onBadSite = Settings.domains.contains { host == $0 || host.hasSuffix("." + $0) }
         let title = tab.title.lowercased()
         return onBadSite && !Settings.allowlist.contains { title.contains($0) }
+    }
+
+    /// Closes the active tab in Chrome's front window.
+    static func closeActiveTab() {
+        let source = """
+        tell application id "\(chromeBundleID)"
+            if (count of windows) > 0 then close active tab of front window
+        end tell
+        """
+        var error: NSDictionary?
+        NSAppleScript(source: source)?.executeAndReturnError(&error)
     }
 
     /// Returns nil unless Chrome is frontmost. Checking via NSWorkspace first means we never

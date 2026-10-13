@@ -12,30 +12,45 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Toggle("Enabled", isOn: $enabled)
-            Toggle("Launch at login", isOn: $launchAtLogin)
-                .onChange(of: launchAtLogin) { on in
-                    do {
-                        if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                    } catch {
-                        launchAtLogin = SMAppService.mainApp.status == .enabled
+            Section {
+                Toggle("Enabled", isOn: $enabled)
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { on in
+                        do {
+                            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                        } catch {
+                            launchAtLogin = SMAppService.mainApp.status == .enabled
+                        }
                     }
-                }
-            TextField("Message", text: $message)
-            Stepper("Grace period: \(grace)s", value: $grace, in: 5...3600, step: 5)
-            Stepper("Cooldown between popups: \(cooldown / 60)m", value: $cooldown, in: 60...7200, step: 60)
-            VStack(alignment: .leading) {
-                Text("Distracting domains (comma-separated)")
-                TextField("", text: $domains)
             }
-            VStack(alignment: .leading) {
-                Text("Allowed if tab title contains (comma-separated)")
-                TextField("", text: $allowlist)
-                Text("Keep this tight: \"Joe Rogan lecture\" would slip through.")
-                    .font(.caption).foregroundStyle(.secondary)
+
+            Section("Popup") {
+                TextField("Message", text: $message, axis: .vertical)
+                    .lineLimit(1...3)
+                Stepper("Show after \(grace) seconds", value: $grace, in: 5...3600, step: 5)
+                Stepper("Wait \(cooldown / 60) min between popups", value: $cooldown, in: 60...7200, step: 60)
+            }
+
+            Section {
+                TextField("Distracting domains", text: $domains, axis: .vertical)
+                    .lineLimit(1...3)
+            } header: {
+                Text("Sites")
+            } footer: {
+                Text("Comma-separated, e.g. youtube.com, reddit.com")
+            }
+
+            Section {
+                TextField("Allowed title words", text: $allowlist, axis: .vertical)
+                    .lineLimit(1...4)
+            } header: {
+                Text("Study allowlist")
+            } footer: {
+                Text("A tab is ignored if its title contains any of these. Keep it tight: \"Joe Rogan lecture\" would slip through.")
             }
         }
-        .padding(20)
-        .frame(width: 440)
+        .formStyle(.grouped)
+        .frame(width: 520)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

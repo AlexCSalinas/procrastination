@@ -5,7 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var settingsWindow: NSWindow?
     private let panel = NagPanel()
-    private lazy var monitor = Monitor { [panel] message in panel.show(message: message) }
+    private lazy var monitor = Monitor { [panel] message, minutes in panel.show(message: message, minutesToday: minutes) }
     private var toggleItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleEnabled() { Settings.enabled.toggle() }
-    @objc private func testPopup() { panel.show(message: Settings.message) }
+    @objc private func testPopup() { panel.show(message: Settings.message, minutesToday: max(Settings.distractedMinutesToday, 1)) }
 
     @objc private func openSettings() {
         if settingsWindow == nil {

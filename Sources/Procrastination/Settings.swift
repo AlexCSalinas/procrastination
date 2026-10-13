@@ -38,6 +38,17 @@ enum Settings {
     static var domains: [String] { terms(defaults.string(forKey: Key.domains)) }
     static var allowlist: [String] { terms(defaults.string(forKey: Key.allowlist)) }
 
+    /// Seconds spent on distracting sites today; resets when the date changes.
+    static func addDistractedTime(_ seconds: TimeInterval) {
+        let today = Calendar.current.startOfDay(for: Date()).timeIntervalSince1970
+        if defaults.double(forKey: "distractedDay") != today {
+            defaults.set(today, forKey: "distractedDay")
+            defaults.set(0.0, forKey: "distractedSeconds")
+        }
+        defaults.set(defaults.double(forKey: "distractedSeconds") + seconds, forKey: "distractedSeconds")
+    }
+    static var distractedMinutesToday: Int { Int(defaults.double(forKey: "distractedSeconds") / 60) }
+
     /// Splits on commas/newlines, lowercases, drops blanks.
     private static func terms(_ raw: String?) -> [String] {
         (raw ?? "")
